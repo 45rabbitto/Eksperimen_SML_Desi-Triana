@@ -1,17 +1,15 @@
 name: Diamond Data Preprocessing
 
 on:
+  workflow_dispatch:
   push:
     paths:
-      - 'data_raw/diamonds.csv'
+      - 'data_raw/**'
       - 'preprocessing/automate_Desi-Triana.py'
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 1'
-    
+
 permissions:
   contents: write
-  
+
 jobs:
   preprocess-data:
     runs-on: ubuntu-latest
@@ -19,6 +17,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Setup Python
       uses: actions/setup-python@v5
@@ -34,16 +34,6 @@ jobs:
       run: |
         python preprocessing/automate_Desi-Triana.py
     
-    - name: Check if cleaned data generated
-      run: |
-        if [ -f "preprocessing/data_preprocessed/diamonds_clean.csv" ]; then
-          echo " Preprocessing berhasil! Dataset bersih ditemukan."
-          ls -lh preprocessing/data_preprocessed/
-        else
-          echo " Gagal: Dataset bersih tidak ditemukan!"
-          exit 1
-        fi
-    
     - name: Upload cleaned dataset as artifact
       uses: actions/upload-artifact@v4
       with:
@@ -54,7 +44,7 @@ jobs:
     - name: Commit and push cleaned dataset
       run: |
         git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        git config --local user.name "github-actions[bot]"
         git add preprocessing/data_preprocessed/diamonds_clean.csv
         git diff --staged --quiet || git commit -m "Auto-update: Diamond clean dataset [skip ci]"
         git push
